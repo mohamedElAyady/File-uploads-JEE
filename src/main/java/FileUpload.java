@@ -8,29 +8,53 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
-/**
- * Servlet implementation class FileUpload
+/*
+ * Notre serlvet permettant de récupérer les fichiers côté serveur.
+ * Elle répondra à l'URL /upload dans l'application Web considérée.
  */
-@WebServlet(name = "FileUploadServlet", urlPatterns = { "/fileuploadservlet" })
-@MultipartConfig(
-	  fileSizeThreshold = 1024 * 1024 * 1, // 1 MB
-	  maxFileSize = 1024 * 1024 * 10,      // 10 MB
-	  maxRequestSize = 1024 * 1024 * 100   // 100 MB
-	)
+@MultipartConfig( fileSizeThreshold = 1024 * 1024, 
+                  maxFileSize = 1024 * 1024 * 5,
+                  maxRequestSize = 1024 * 1024 * 5 * 5 )
 public class FileUpload extends HttpServlet {
-	private static final long serialVersionUID = 1L;
-      
-	
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		/* Receive file uploaded to the Servlet from the HTML5 form */
-	    Part filePart = request.getPart("file");
-	    String fileName = filePart.getSubmittedFileName();
-	    for (Part part : request.getParts()) {
-	      part.write("/File_upload/src/main/webapp/assets/" + fileName);
-	    }
-	    response.getWriter().print("The file uploaded sucessfully.");
-	}
 
+    private static final long serialVersionUID = 1273074928096412095L;
+    
+    public static final String IMAGES_FOLDER = "/Images";
+    
+    public String uploadPath;
+    
+    @Override
+    public void init() throws ServletException {
+        uploadPath = getServletContext().getRealPath( IMAGES_FOLDER );
+        File uploadDir = new File( uploadPath );
+        if ( ! uploadDir.exists() ) uploadDir.mkdir();
+    }
+       
+    /*
+     * Récupération et sauvegarde du contenu de chaque image.
+     */ 
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse resp)
+            throws ServletException, IOException {
+        for ( Part part : request.getParts() ) {
+            String fileName = getFileName( part );
+            String fullPath = uploadPath + File.separator + fileName;
+           
+        }
+    }
+
+    /*
+     * Récupération du nom du fichier dans la requête.
+     */
+    private String getFileName( Part part ) {
+        for ( String content : part.getHeader( "content-disposition" ).split( ";" ) ) {
+            if ( content.trim().startsWith( "filename" ) )
+                return content.substring( content.indexOf( "=" ) + 2, content.length() - 1 );
+        }
+        return "Default.file";
+    }
 }
